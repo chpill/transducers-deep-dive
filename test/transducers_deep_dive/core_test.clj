@@ -12,6 +12,10 @@
 
 (def chunks (make-chunks 10 999))
 (def mini-chunks (make-chunks 3 5))
+(def mini-chunks-with-error
+  [[{:a 0} {:a 1} {:a 2}]
+   [{:a 0} {:a 1} {:a 2}]
+   {:error "Something terrible has happened!"}])
 
 (defn make-faulty-chunks [navigator chunk-count chunk-size]
   (->> ;;(make-chunks chunk-count chunk-size)
@@ -30,14 +34,18 @@
          (x-version-1 chunks)
          (x-version-2 chunks)
          (x-version-3-cheat chunks)
-         (x-version-4 chunks))))
+         (x-version-4 chunks)
+         (x-version-4-dummy-transducer chunks)
+         (x-version-4-simpler chunks))))
 
 (deftest error-chunks
   (testing "error in the last chunk"
     (is (= {:error "something terrible happened here!"}
            (original tail-faulty-chunks)
            (x-version-3-cheat tail-faulty-chunks)
-           (x-version-4 tail-faulty-chunks)))))
+           (x-version-4 tail-faulty-chunks)
+           (x-version-4-dummy-transducer tail-faulty-chunks)
+           (x-version-4-simpler tail-faulty-chunks)))))
 
 (comment
   "
@@ -72,7 +80,28 @@ low-severe 1 (1.6667 %)
 low-mild	 2 (3.3333 %)
 Variance from outliers : 14.1514 % Variance is moderately inflated by outliers
 "
+(criterium/quick-bench (x-version-2 chunks))
+"
+Evaluation count              : 1578 in 6 samples of 263 calls.
+Execution time mean           : 409.277676 µs
+Execution time std-deviation  : 42.914476 µs
+Execution time lower quantile : 387.744354 µs ( 2.5%)
+Execution time upper quantile : 482.870979 µs (97.5%)
+Overhead used                 : 1.481300 ns
 
+Found 1 outliers in 6 samples (16.6667 %)
+	low-severe	 1 (16.6667 %)
+Variance from outliers : 30.7015 % Variance is moderately inflated by outliers
+"
+(criterium/quick-bench (x-version-3-cheat chunks))
+"
+  Evaluation count              : 1260 in 6 samples of 210 calls.
+  Execution time mean           : 476.083571 µs
+  Execution time std-deviation  : 12.284516 µs
+  Execution time lower quantile : 463.180057 µs ( 2.5%)
+  Execution time upper quantile : 488.899937 µs (97.5%)
+  Overhead used                 : 1.976022 ns
+  "
   (criterium/quick-bench (x-version-4 chunks))
   "
 Evaluation count              : 1320 in 6 samples of 220 calls.
@@ -82,14 +111,47 @@ Execution time lower quantile : 453.641818 µs ( 2.5%)
 Execution time upper quantile : 475.406465 µs (97.5%)
 Overhead used                 : 1.976022 ns
 "
-  (criterium/quick-bench (x-version-3-cheat chunks))
-  "
-Evaluation count              : 1260 in 6 samples of 210 calls.
-Execution time mean           : 476.083571 µs
-Execution time std-deviation  : 12.284516 µs
-Execution time lower quantile : 463.180057 µs ( 2.5%)
-Execution time upper quantile : 488.899937 µs (97.5%)
-Overhead used                 : 1.976022 ns
+;; Note the large standard deviation here
+  (criterium/quick-bench (x-version-4-simpler chunks))
+"
+Evaluation count              : 1344 in 6 samples of 224 calls.
+Execution time mean           : 481.778222 µs
+Execution time std-deviation  : 93.720543 µs
+Execution time lower quantile : 423.314705 µs ( 2.5%)
+Execution time upper quantile : 640.719770 µs (97.5%)
+Overhead used                 : 1.481300 ns
+
+Found 1 outliers in 6 samples (16.6667 %)
+	low-severe	 1 (16.6667 %)
+Variance from outliers : 48.2796 % Variance is moderately inflated by outliers
+"
+(criterium/bench (x-version-4-simpler chunks))
+"
+Evaluation count              : 156300 in 60 samples of 2605 calls.
+Execution time mean           : 405.974099 µs
+Execution time std-deviation  : 21.578325 µs
+Execution time lower quantile : 377.589901 µs ( 2.5%)
+Execution time upper quantile : 448.218002 µs (97.5%)
+Overhead used                 : 1.481300 ns
+
+Found 1 outliers in 60 samples (1.6667 %)
+	low-severe	 1 (1.6667 %)
+Variance from outliers : 38.5251 % Variance is moderately inflated by outliers
+"
+
+(criterium/bench (x-version-4-dummy-transducer chunks))
+"
+Evaluation count              : 156900 in 60 samples of 2615 calls.
+Execution time mean           : 387.491867 µs
+Execution time std-deviation  : 17.182729 µs
+Execution time lower quantile : 367.187856 µs ( 2.5%)
+Execution time upper quantile : 421.113467 µs (97.5%)
+Overhead used                 : 1.468563 ns
+
+Found 2 outliers in 60 samples (3.3333 %)
+	low-severe	 1 (1.6667 %)
+	low-mild	 1 (1.6667 %)
+Variance from outliers : 30.3386 % Variance is moderately inflated by outliers
 "
 
   "
@@ -118,6 +180,16 @@ Found 1 outliers in 6 samples (16.6667 %)
 low-severe	 1 (16.6667 %)
 Variance from outliers : 13.8889 % Variance is moderately inflated by outliers
 "
+  (criterium/quick-bench (x-version-4-simpler tail-faulty-chunks))
+  "
+Evaluation count              : 339012 in 6 samples of 56502 calls.
+Execution time mean           : 1.795873 µs
+Execution time std-deviation  : 40.528554 ns
+Execution time lower quantile : 1.751720 µs ( 2.5%)
+Execution time upper quantile : 1.833571 µs (97.5%)
+Overhead used                 : 1.481300 ns
+"
+
 
 "
 What about at the beginning of the batch?
@@ -145,4 +217,5 @@ Execution time lower quantile : 621.753272 ns ( 2.5%)
 Execution time upper quantile : 647.583049 ns (97.5%)
 Overhead used                 : 1.976022 ns
 "
+
   )

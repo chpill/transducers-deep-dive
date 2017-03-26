@@ -82,3 +82,36 @@
              {}
              chunks))
 
+(defn x-version-4-simpler [chunks]
+  (transduce (comp (halt-when error?)
+                   cat
+                   (x/by-key :a x/count))
+             conj
+             {}
+             chunks))
+
+(defn single-return-transducer
+  "Dummy transducer that simply that will simply return the value given to it,
+  ignoring any accumulated value"
+  ([] :initial-value-to-be-ignored)
+  ([final-value] final-value)
+  ([initial-value v] v))
+
+(defn spy-single-return-transducer
+  "This special transducer will return a single value"
+  ([] :initial-value-to-be-ignored)
+  ([final-value]
+   (println "completion step with final value:" final-value)
+   final-value)
+  ([initial-value v]
+   (println "initial value (ignored):" initial-value)
+   (println"v:" v)
+   v))
+
+(defn x-version-4-dummy-transducer [chunks]
+  (transduce (comp (halt-when error?)
+                   cat
+                   (x/by-key :a x/count)
+                   (x/into {}))
+             single-return-transducer
+             chunks))
