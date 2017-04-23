@@ -1,4 +1,4 @@
-(ns transducers-deep-dive.core
+(ns transducers-deep-dive.batch
   (:require [net.cgrand.xforms :as x]))
 
 ;; Dealing with chunks
@@ -115,3 +115,30 @@
                    (x/into {}))
              single-return-transducer
              chunks))
+
+
+(defn using-transduce-and-into [chunks]
+  (transduce (comp (halt-when :error)
+                   cat
+                   (x/by-key :a x/count))
+             into
+             {}
+             chunks))
+
+(transduce (halt-when :err)
+           into
+           []
+           [[1] {:err :oops} [2]])
+
+
+(defn using-eduction [chunks]
+  (frequencies (eduction (halt-when :error) cat (map :a)
+                         chunks)))
+
+(def using-educ #(->> % (eduction (comp (halt-when :error) cat (map :a))) frequencies))
+
+
+(def using-eduction-2
+  #(->> %
+        (eduction (halt-when :err) cat (map :a))
+        frequencies))

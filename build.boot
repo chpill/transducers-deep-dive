@@ -7,6 +7,10 @@
                             [net.cgrand/xforms "0.8.3"]
                             [com.rpl/specter "1.0.0"]
                             [adzerk/boot-test "RELEASE" :scope "test"]
-                            [criterium "0.4.4"]])
+                            [criterium "0.4.4"]
+                            [samestep/boot-refresh "0.1.0"]
+                            [org.clojure/core.async "0.3.442"]])
 
-(require '[adzerk.boot-test :refer [test]])
+(require '[adzerk.boot-test :refer [test]]
+         '[samestep.boot-refresh :refer [refresh]])
+

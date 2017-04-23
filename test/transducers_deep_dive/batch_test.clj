@@ -1,9 +1,9 @@
-(ns transducers-deep-dive.core-test
+(ns transducers-deep-dive.batch-test
   (:require [clojure.test :refer :all]
             [com.rpl.specter :as specter]
             [criterium.core :as criterium]
             [net.cgrand.xforms :as x]
-            [transducers-deep-dive.core :refer :all]))
+            [transducers-deep-dive.batch :refer :all]))
 
 (defn make-chunks [chunk-count chunk-size]
   (for [i (range chunk-count)]
@@ -11,7 +11,7 @@
          {:a (mod j 3)})))
 
 (def chunks (make-chunks 10 999))
-(def mini-chunks (make-chunks 3 5))
+(def mini-chunks (make-chunks 3 3))
 (def mini-chunks-with-error
   [[{:a 0} {:a 1} {:a 2}]
    [{:a 0} {:a 1} {:a 2}]
@@ -36,7 +36,8 @@
          (x-version-3-cheat chunks)
          (x-version-4 chunks)
          (x-version-4-dummy-transducer chunks)
-         (x-version-4-simpler chunks))))
+         (x-version-4-simpler chunks)
+         (using-eduction chunks))))
 
 (deftest error-chunks
   (testing "error in the last chunk"
@@ -45,7 +46,8 @@
            (x-version-3-cheat tail-faulty-chunks)
            (x-version-4 tail-faulty-chunks)
            (x-version-4-dummy-transducer tail-faulty-chunks)
-           (x-version-4-simpler tail-faulty-chunks)))))
+           (x-version-4-simpler tail-faulty-chunks)
+           (using-eduction tail-faulty-chunks)))))
 
 (comment
   "
@@ -153,6 +155,20 @@ Found 2 outliers in 60 samples (3.3333 %)
 	low-mild	 1 (1.6667 %)
 Variance from outliers : 30.3386 % Variance is moderately inflated by outliers
 "
+(criterium/bench (using-eduction chunks))
+"
+Evaluation count              : 53040 in 60 samples of 884 calls.
+Execution time mean           : 1.146363 ms
+Execution time std-deviation  : 33.157740 µs
+Execution time lower quantile : 1.117623 ms ( 2.5%)
+Execution time upper quantile : 1.237063 ms (97.5%)
+Overhead used                 : 1.466250 ns
+
+Found 3 outliers in 60 samples (5.0000 %)
+	low-severe	 1 (1.6667 %)
+	low-mild	 2 (3.3333 %)
+Variance from outliers : 15.8020 % Variance is moderately inflated by outliers
+"
 
   "
 Now with an error at the end of the batch!
@@ -217,5 +233,38 @@ Execution time lower quantile : 621.753272 ns ( 2.5%)
 Execution time upper quantile : 647.583049 ns (97.5%)
 Overhead used                 : 1.976022 ns
 "
+
+(criterium/quick-bench (every? #{"something"} ["something" "something" "something-else"]))
+"
+Evaluation count              : 2255688 in 6 samples of 375948 calls.
+Execution time mean           : 272.539523 ns
+Execution time std-deviation  : 6.663137 ns
+Execution time lower quantile : 265.565052 ns ( 2.5%)
+Execution time upper quantile : 279.235787 ns (97.5%)
+Overhead used                 : 1.450795 ns
+"
+
+(criterium/quick-bench (every? #(= % "something")
+                               ["something" "something" "something-else"]))
+"
+Evaluation count              : 3009468 in 6 samples of 501578 calls.
+Execution time mean           : 198.541493 ns
+Execution time std-deviation  : 4.465818 ns
+Execution time lower quantile : 193.856156 ns ( 2.5%)
+Execution time upper quantile : 203.713688 ns (97.5%)
+Overhead used                 : 1.450795 ns
+"
+
+(def plop (-> (repeat 10 "something")
+              (conj "plop")
+              reverse))
+
+(criterium/quick-bench (every? #(= % "something")
+                               plop))
+
+(criterium/quick-bench (every? #{"something"}
+                               plop))
+
+
 
   )
