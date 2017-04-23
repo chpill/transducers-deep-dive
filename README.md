@@ -19,6 +19,6 @@ that I had just impletemented `take-while` but with a `complement` on the
 predicate. The more you know...
 
 
-#### [transducers_deep_dive.async](https://github.com/chpill/transducers-deep-dive/blob/master/src/transducers_deep_dive/stop_when.clj)
+#### [transducers_deep_dive.async](https://github.com/chpill/transducers-deep-dive/blob/master/src/transducers_deep_dive/async.clj)
 
 Just following along on code examples from a talk on core.async.
