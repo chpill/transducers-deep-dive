@@ -3,7 +3,11 @@
 
 
 (defn stop-when
-  "Transducer that aborts"
+  "Transducer that stops a transduction (akin to halt-when) but let the
+  transducers downstream of it call there completion arity
+
+  I just realised you can do the very same thing with
+  `(take-while (complement))`..."
   [pred]
   (fn [rf]
     (fn
@@ -12,6 +16,9 @@
       ([result comment] (if (pred comment)
                           (ensure-reduced result)
                           (rf result comment))))))
+
+(defn simpler-stop-when [pred]
+  (take-while (complement pred)))
 
 (defn spy-xform [rf]
   (fn
@@ -32,8 +39,10 @@
   ([comments visited]
    (into {}
          (x/by-key :type
-                   (x/transjuxt {:total (comp (stop-when #(contains? visited (:type %)))
-                                              ;;spy-xform
-                                              x/count)
+                   (x/transjuxt {:total (comp
+                                         (simpler-stop-when #(contains? visited (:type %)))
+                                         ;; (stop-when #(contains? visited (:type %)))
+                                         ;;  spy-xform
+                                         x/count)
                                  :comments (x/into [])}))
          comments)))

@@ -14,7 +14,9 @@ See accompanying blog post https://medium.com/@chpill_/deep-dive-into-a-clojure-
 #### [transducers_deep_dive.stop_when](https://github.com/chpill/transducers-deep-dive/blob/master/src/transducers_deep_dive/stop_when.clj)
 
 Creating a `stop-when` transducer akin to `halt-when`, but that does not
-sidetrack the downstream transducers on interruption.
+sidetrack the downstream transducers on interruption. I realised after the fact
+that I had just impletemented `take-while` but with a `complement` on the
+predicate. The more you know...
 
 
 #### [transducers_deep_dive.async](https://github.com/chpill/transducers-deep-dive/blob/master/src/transducers_deep_dive/stop_when.clj)
